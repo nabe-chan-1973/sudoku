@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- viewport-fit=cover は iPhone の「ノッチ」対策。user-scalable=no でピンチ拡大を止める -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#2563eb">
+  <title>数独</title>
+
+  <!-- PWA（ホーム画面に置いてアプリとして使うための設定） -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/favicon.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="数独">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- ===== 上部：タイトルと状態表示 ===== -->
+    <header class="header">
+      <h1 class="title">数独</h1>
+      <div class="meta">
+        <span class="chip" id="diffChip">ふつう</span>
+        <span class="chip" id="timeChip">00:00</span>
+        <span class="chip" id="missChip">ミス 0</span>
+      </div>
+    </header>
+
+    <!-- ===== 盤面 =====
+         中身の81マスは app.js が作ります。
+         HTML に81個手書きするより、プログラムに作らせたほうがラクで間違いがありません。 -->
+    <div class="board-wrap">
+      <div class="board" id="board"></div>
+
+      <!-- クリアしたときに盤面の上に重ねて出すお祝い -->
+      <div class="overlay" id="overlay" hidden>
+        <div class="overlay-card">
+          <p class="overlay-title">クリア！</p>
+          <p class="overlay-sub" id="overlaySub"></p>
+          <button class="btn primary" id="overlayNew">もう一問</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 数字ボタン（1〜9）===== 中身は app.js が作ります -->
+    <div class="pad" id="pad"></div>
+
+    <!-- ===== 道具 ===== -->
+    <div class="tools">
+      <button class="tool" id="undoBtn">↩<span>戻す</span></button>
+      <button class="tool" id="eraseBtn">⌫<span>消す</span></button>
+      <button class="tool" id="memoBtn">✎<span>メモ</span></button>
+      <button class="tool" id="hintBtn">💡<span>ヒント</span></button>
+    </div>
+
+    <!-- ===== 下部：新しいゲーム ===== -->
+    <div class="newgame">
+      <select id="diffSelect" aria-label="難易度"></select>
+      <button class="btn primary" id="newBtn">新しいゲーム</button>
+    </div>
+
+    <p class="hint-text">パソコン：矢印キーで移動 / 1〜9 で入力 / Backspace で消す / M でメモ</p>
+
+  </div>
+
+  <!-- 読み込む順番が大事。sudoku.js（頭脳）が先、app.js（画面）が後。
+       app.js は Sudoku を使うので、先に用意されている必要があります。 -->
+  <script src="sudoku.js"></script>
+  <script src="app.js"></script>
+
+  <!-- Service Worker を登録して、オフラインでも遊べるようにする。
+       file:// で直接開いたときは使えない仕組みなので、その場合は何もしない。 -->
+  <script>
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {
+          // 登録できなくてもゲームは普通に遊べるので、黙って無視する
+        });
+      });
+    }
+  </script>
+
+</body>
+</html>

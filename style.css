@@ -1,0 +1,285 @@
+/* ===========================================================
+ * style.css ― 見た目の担当
+ * =========================================================== */
+
+/* 色をまとめて名前で管理しておくと、あとで一括変更できて楽 */
+:root {
+  --bg:           #eef1f7;
+  --panel:        #ffffff;
+  --line:         #cbd3e1;   /* 細い罫線 */
+  --line-strong:  #48536b;   /* 3x3 を区切る太い罫線 */
+  --text:         #1b2130;
+  --text-user:    #2563eb;   /* 自分で入れた数字は青 */
+  --accent:       #2563eb;
+  --accent-soft:  #dbe6fe;
+  --related:      #e8edf7;   /* 選択中と同じ行・列・ブロック */
+  --same:         #c8dcfb;   /* 選択中と同じ数字 */
+  --error:        #dc2626;
+  --error-bg:     #fde2e2;
+  --hint:         #059669;
+  --muted:        #6b7488;
+  --shadow:       0 2px 10px rgba(20, 30, 60, .10);
+  --radius:       12px;
+}
+
+/* 端末がダークモードなら、色だけ差し替える */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:           #11141b;
+    --panel:        #1a1e28;
+    --line:         #333b4d;
+    --line-strong:  #838da3;
+    --text:         #e8ebf2;
+    --text-user:    #74a9ff;
+    --accent:       #3b82f6;
+    --accent-soft:  #1e3358;
+    --related:      #222836;
+    --same:         #2b3d5c;
+    --error:        #f87171;
+    --error-bg:     #472020;
+    --hint:         #34d399;
+    --muted:        #98a2b5;
+    --shadow:       0 2px 10px rgba(0, 0, 0, .35);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  /* env(safe-area-inset-*) は「ノッチや丸角を避けるための余白」。
+     ホーム画面から全画面で起動したとき、上下が隠れないようにする。 */
+  padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  display: flex;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;  /* スマホでタップ時の灰色を消す */
+}
+
+.app {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---------- 上部（タイトルと状態） ---------- */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: .12em;
+}
+
+.meta { display: flex; gap: 6px; }
+
+.chip {
+  background: var(--panel);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;   /* 数字の幅を揃えてガタつきを防ぐ */
+  box-shadow: var(--shadow);
+}
+.chip.warn { color: var(--error); }
+
+/* ---------- 盤面 ---------- */
+
+.board-wrap { position: relative; }
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  aspect-ratio: 1 / 1;          /* 常に正方形を保つ */
+  background: var(--panel);
+  border: 2px solid var(--line-strong);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  touch-action: manipulation;   /* ダブルタップ拡大を無効化 */
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: clamp(17px, 5.4vw, 28px);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color .08s;
+}
+
+/* 3x3 ブロックの境目だけ罫線を太く */
+.cell.edge-right  { border-right:  2px solid var(--line-strong); }
+.cell.edge-bottom { border-bottom: 2px solid var(--line-strong); }
+.cell.last-col    { border-right:  none; }
+.cell.last-row    { border-bottom: none; }
+
+/* --- マスの状態ごとの色（下に書いたものほど優先される） --- */
+.cell.related   { background: var(--related); }
+.cell.same      { background: var(--same); }
+.cell.conflict  { background: var(--error-bg); }
+.cell.selected  { background: var(--accent-soft); }
+
+.cell .value { font-weight: 300; }
+.cell.given .value { font-weight: 700; }                 /* 最初からある数字は太字 */
+.cell.filled .value { color: var(--text-user); }         /* 自分で入れた数字は青 */
+.cell.wrong  .value { color: var(--error); }             /* 答えと違う数字は赤 */
+.cell.hinted .value { color: var(--hint); }              /* ヒントで出た数字は緑 */
+
+/* メモ（小さい数字）は 3x3 に並べる */
+.memos {
+  position: absolute;
+  inset: 3px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  font-size: clamp(7px, 2vw, 11px);
+  color: var(--muted);
+  pointer-events: none;
+}
+.memos span { display: flex; align-items: center; justify-content: center; }
+
+/* ---------- クリア時のオーバーレイ ---------- */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 15, 30, .55);
+  border-radius: 8px;
+}
+.overlay[hidden] { display: none; }
+
+.overlay-card {
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 22px 26px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  animation: pop .25s ease-out;
+}
+@keyframes pop {
+  from { transform: scale(.85); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.overlay-title { margin: 0 0 6px; font-size: 24px; font-weight: 700; }
+.overlay-sub   { margin: 0 0 16px; font-size: 13px; color: var(--muted); }
+
+/* ---------- 数字ボタン ---------- */
+
+.pad {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 5px;
+}
+
+.num {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  border: none;
+  border-radius: 9px;
+  background: var(--panel);
+  color: var(--accent);
+  font-size: clamp(17px, 5vw, 24px);
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  padding: 0;
+}
+.num:active { transform: translateY(1px); }
+
+/* 残り個数（ボタンの下に小さく） */
+.num .left {
+  position: absolute;
+  bottom: 3px;
+  left: 0;
+  right: 0;
+  font-size: 9px;
+  color: var(--muted);
+}
+
+/* 9個すべて置き終わった数字は薄くする */
+.num.done { opacity: .35; }
+
+/* ---------- 道具ボタン ---------- */
+
+.tools {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.tool {
+  border: none;
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 18px;
+  padding: 8px 0 6px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.tool span { font-size: 10px; color: var(--muted); }
+.tool:active { transform: translateY(1px); }
+.tool:disabled { opacity: .4; cursor: default; }
+
+/* メモモードが ON のとき */
+.tool.on {
+  background: var(--accent);
+  color: #fff;
+}
+.tool.on span { color: rgba(255, 255, 255, .85); }
+
+/* ---------- 下部（新しいゲーム） ---------- */
+
+.newgame {
+  display: flex;
+  gap: 8px;
+}
+
+select, .btn {
+  font-family: inherit;
+  font-size: 14px;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 14px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+select { flex: 1; }
+
+.btn.primary {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+.hint-text {
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0;
+}
