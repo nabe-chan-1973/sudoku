@@ -430,6 +430,50 @@ document.addEventListener('keydown', (e) => {
 
 
 /* -----------------------------------------------------------
+ * ホーム画面へのインストール
+ *
+ * Chrome のメニューの中を探すのは分かりにくいので、
+ * インストールできるときだけボタンを画面に出します。
+ * ボタンが出ない = Chrome が「まだインストールできない」と判断している、
+ * という状態の確認にもなります。
+ * （iPhone の Safari はこの仕組みに対応していないので、
+ *   共有ボタン →「ホーム画面に追加」から入れてください）
+ * --------------------------------------------------------- */
+
+const installBtn = document.getElementById('installBtn');
+
+function updateInstallButton() {
+  const installed = window.matchMedia('(display-mode: standalone)').matches
+                 || window.navigator.standalone === true;
+  installBtn.hidden = installed || !window.deferredInstallPrompt;
+}
+
+// head で既に捕まえているかもしれないので、まず一度確認する
+updateInstallButton();
+window.addEventListener('installable', updateInstallButton);
+
+installBtn.addEventListener('click', async () => {
+  const prompt = window.deferredInstallPrompt;
+  if (!prompt) return;
+
+  installBtn.hidden = true;
+  prompt.prompt();
+  const { outcome } = await prompt.userChoice;
+
+  if (outcome === 'accepted') {
+    window.deferredInstallPrompt = null;   // 使い終わったら捨てる（再利用できない）
+  } else {
+    installBtn.hidden = false;             // 断られたら、またボタンを出しておく
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  window.deferredInstallPrompt = null;
+  installBtn.hidden = true;
+});
+
+
+/* -----------------------------------------------------------
  * ボタンの配線と、起動
  * --------------------------------------------------------- */
 

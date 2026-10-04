@@ -277,6 +277,18 @@ select { flex: 1; }
   font-weight: 700;
 }
 
+/* インストールボタン（Chrome がインストール可能と判定したときだけ現れる） */
+.btn.install {
+  width: 100%;
+  background: var(--hint);
+  color: #fff;
+  font-weight: 700;
+  padding: 13px;
+}
+
+/* hidden 属性を確実に効かせる（display を指定した要素は hidden を無視してしまうため） */
+[hidden] { display: none !important; }
+
 .hint-text {
   text-align: center;
   font-size: 11px;

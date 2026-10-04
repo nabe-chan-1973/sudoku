@@ -17,6 +17,18 @@
   <meta name="apple-mobile-web-app-title" content="数独">
 
   <link rel="stylesheet" href="style.css">
+
+  <!-- Chrome は「このサイトはインストールできる」と判断した瞬間に
+       beforeinstallprompt を1回だけ飛ばしてきます。ページ読み込み直後なので、
+       app.js を待っていると取り逃がす。だからここ（head）で先に捕まえておく。 -->
+  <script>
+    window.deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();                 // Chrome 標準の小さいバーを出さない
+      window.deferredInstallPrompt = e;   // あとでボタンから使うために取っておく
+      window.dispatchEvent(new Event('installable'));
+    });
+  </script>
 </head>
 <body>
 
@@ -64,6 +76,10 @@
       <select id="diffSelect" aria-label="難易度"></select>
       <button class="btn primary" id="newBtn">新しいゲーム</button>
     </div>
+
+    <!-- Chrome がインストール可能と判定したときだけ現れるボタン。
+         メニューの中を探さなくて済む。 -->
+    <button class="btn install" id="installBtn" hidden>📲　ホーム画面にインストール</button>
 
     <p class="hint-text">パソコン：矢印キーで移動 / 1〜9 で入力 / Backspace で消す / M でメモ</p>
 
